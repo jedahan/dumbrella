@@ -25,9 +25,9 @@ const char device_id[] = "dumbrella";
 const char mySSID[] = "dd-wrt";
 const char myPassword[] = "";
 
-//const char site[] = "api.goingtorain.com";
 const char site[] = "talon";
 const int port = 3000;
+
 const int buffer_read_timeout = 15 * 1000;
 boolean body = false;
 int newline = 0;
