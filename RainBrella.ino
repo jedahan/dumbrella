@@ -11,9 +11,8 @@
 #define DEBUG_PRINTLN(x)
 #endif 
 
-#define LED_PIN 13
+#include <LowPower.h>
 
-#include <avr/sleep.h>
 #include <WiFlyHQ.h>
 
 #include <SoftwareSerial.h>
