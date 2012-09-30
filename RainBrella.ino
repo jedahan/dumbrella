@@ -29,15 +29,15 @@ const char site[] = "talon";
 const int port = 3000;
 
 const int buffer_read_timeout = 15 * 1000;
-boolean body = false;
-int newline = 0;
+char buf[256];
 
-char buf[32];
+const int ledPin = 13;
 
+const int wakePin = 2;
 // wake every 29 minutes
-const int wake_time = 29 * 60;
+const int wake_time = 60 * 29;
 // sleep 1 minute after tcp connection closes
-const int sleep_time = 60 * 60;
+const int sleep_time = 60 * 1;
 
 void terminal();
 void connect_to_wifly();
