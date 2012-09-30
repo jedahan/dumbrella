@@ -45,143 +45,153 @@ void join_network();
 void display_info();
 void reconnect_to_website();
 void read_one_character();
+void set_alternate_pin_functions();
 
 void setup()
 {
-    // call wakeup() when digital pin 2 goes low
-    attachInterrupt(0, wakeup, LOW);
-    connect_to_wifly();
+  pinMode(wakePin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  connect_to_wifly();
+  set_alternate_pin_functions();
 }
 
 void loop()
 {
-    join_network();
-    display_info();
-    reconnect_to_website();
-    check_if_its_raining();
-    go_to_sleep();
+  join_network();
+//  display_info();
+  reconnect_to_website();
+  check_if_its_raining();
+  delay(30*1000);
+//  go_to_sleep();
 }
 
 void check_if_its_raining()
 {
-    boolean rain = false;
-    // only read up to the 13th character, which should be a 'y' or 'n'
-    /* 
-    wifly.gets(buf,13,buffer_read_timeout);
-    if (buf[12] == 'y') { rain = true; }
-    */
-    wifly.gets(buf,2,buffer_read_timeout);
-    if (buf[1] == '1') { rain = true; }
-
-    if (rain) { digitalWrite(LED_PIN, HIGH); }
-    else { digitalWrite(LED_PIN, LOW); }
+  for(int i=1; i<9; i++) {
+    wifly.gets(buf,3,buffer_read_timeout);
+    DEBUG_PRINT(i);
+    DEBUG_PRINT(":");
+    DEBUG_PRINTLN(buf);
+  }
+  Serial.println(buf);
+  digitalWrite(ledPin, (buf[0]=='1'));
 }
 
 void go_to_sleep() {
-    /* sleep wifly */
-    // set sys wake <secs>
-    // set sys sleep <secs>
+  DEBUG_PRINTLN("wifly: zzzZZZ");
+  wifly.print(F("set sys wake "));
+  wifly.println(wake_time);
+  wifly.println(F("set sys sleep "));
+  wifly.println(sleep_time);
 
-    /* sleep arduino */
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-    sleep_enable();
-    attachInterrupt(0,wakeup, LOW);
-    sleep_mode();
-
-    /* THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP */
-    sleep_disable();
-    detachInterrupt(0);
+  // NOTE: can only use LOW with SLEEP_MODE_PWR_DOWN
+  // TODO: pullup + transistor to invert logic
+  DEBUG_PRINTLN(F("arduino: zzzZZZ"));
+  //attachInterrupt(0,wakeup,LOW);
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  //detachInterrupt(0);
 }
 
+// do as little as possible here
 void wakeup()
 {
-    // we can do cleanup stuff here if we feel like it, but DONT SET TIMERS
+  DEBUG_PRINTLN(F("what a wonderful nap!"));
 }
 
-/* Connect the WiFly serial to the serial monitor. */
+// Connect the WiFly serial to the serial monitor
 void terminal()
 {
-    while (1) {
-        if (wifly.available() > 0) {
-            Serial.write(wifly.read());
-        }
-
-        if (Serial.available() > 0) {
-            wifly.write(Serial.read());
-        }
+  while (1) {
+    if (wifly.available() > 0) {
+      Serial.write(wifly.read());
     }
+
+    if (Serial.available() > 0) {
+      wifly.write(Serial.read());
+    }
+  }
 }
 
 /* Join wifi network if not already associated */
 void join_network()
 {
-    if (!wifly.isAssociated()) {
-        /* Setup the WiFly to connect to a wifi network */
-        DEBUG_PRINTLN(F("Joining network"));
-        wifly.setSSID(mySSID);
-        if (myPassword) { wifly.setPassphrase(myPassword); }
-        wifly.enableDHCP();
+  if (!wifly.isAssociated()) {
+    /* Setup the WiFly to connect to a wifi network */
+    DEBUG_PRINT(F("Joining network "));
+    DEBUG_PRINTLN(mySSID);
+    wifly.setSSID(mySSID);
 
-        if (wifly.join()) {
-            DEBUG_PRINTLN(F("Joined wifi network"));
-        } else {
-            DEBUG_PRINTLN(F("Failed to join wifi network"));
-            terminal();
-        }
-    } else {
-        DEBUG_PRINTLN(F("Already joined network"));
+    if (myPassword!="") {
+      wifly.setPassphrase(myPassword);
     }
+    wifly.enableDHCP();
+
+    if (wifly.join()) {
+      DEBUG_PRINTLN(F("Joined wifi network"));
+    }
+    else {
+      DEBUG_PRINTLN(F("Failed to join wifi network"));
+      terminal();
+    }
+  }
+  else {
+    DEBUG_PRINTLN(F("Already joined network"));
+  }
 }
 
 void display_info()
 {
-    DEBUG_PRINT(F("MAC: "));
-    DEBUG_PRINTLN(wifly.getMAC(buf, sizeof(buf)));
-    DEBUG_PRINT(F("IP: "));
-    DEBUG_PRINTLN(wifly.getIP(buf, sizeof(buf)));
-    DEBUG_PRINT(F("Netmask: "));
-    DEBUG_PRINTLN(wifly.getNetmask(buf, sizeof(buf)));
-    DEBUG_PRINT(F("Gateway: "));
-    DEBUG_PRINTLN(wifly.getGateway(buf, sizeof(buf)));
-    DEBUG_PRINT(F("SSID: "));
-    DEBUG_PRINTLN(wifly.getSSID(buf, sizeof(buf)));
+  DEBUG_PRINT(F("MAC: "));
+  DEBUG_PRINTLN(wifly.getMAC(buf, sizeof(buf)));
+  DEBUG_PRINT(F("IP: "));
+  DEBUG_PRINTLN(wifly.getIP(buf, sizeof(buf)));
+  DEBUG_PRINT(F("Netmask: "));
+  DEBUG_PRINTLN(wifly.getNetmask(buf, sizeof(buf)));
+  DEBUG_PRINT(F("Gateway: "));
+  DEBUG_PRINTLN(wifly.getGateway(buf, sizeof(buf)));
+  DEBUG_PRINT(F("SSID: "));
+  DEBUG_PRINTLN(wifly.getSSID(buf, sizeof(buf)));
 
-    wifly.setDeviceID(device_id);
-    DEBUG_PRINT(F("DeviceID: "));
-    DEBUG_PRINTLN(wifly.getDeviceID(buf, sizeof(buf)));
+  wifly.setDeviceID(device_id);
+  DEBUG_PRINT(F("DeviceID: "));
+  DEBUG_PRINTLN(wifly.getDeviceID(buf, sizeof(buf)));
 }
 
 void reconnect_to_website()
 {
-    if (wifly.isConnected()) {
-        DEBUG_PRINTLN(F("Old connection active. Closing"));
-        wifly.close();
-    }
+  if (wifly.isConnected()) {
+    DEBUG_PRINTLN(F("Old connection active. Closing"));
+    wifly.close();
+  }
 
+  if (wifly.open(site, port)) {
+    DEBUG_PRINT(F("Connected to "));
+    DEBUG_PRINTLN(site);
 
-    if (wifly.open(site, 80)) {
-        DEBUG_PRINT(F("Connected to "));
-        DEBUG_PRINTLN(site);
-
-        /* Send the request */
-        //wifly.println(F("GET /today.json?key=baad1e015e4f9f334e7ca9cb560ebb5d HTTP/1.0"));
-        wifly.println(F("GET / HTTP/1.1"));
-        wifly.println();
-    } else {
-        DEBUG_PRINTLN(F("Failed to connect"));
-    }
+    wifly.println(F("GET /rain HTTP/1.1\r\nUser-Agent: dumbrella"));
+    wifly.println();
+  } else {
+    DEBUG_PRINTLN(F("Failed to connect"));
+  }
 }
 
 void connect_to_wifly()
 {
-    Serial.begin(115200);
-    DEBUG_PRINTLN(F("Starting"));
-    DEBUG_PRINTLN(F("Free memory: "));
-    DEBUG_PRINTLN(wifly.getFreeMemory(),DEC);
+  Serial.begin(115200);
+  DEBUG_PRINTLN(F("Starting"));
+  DEBUG_PRINT(F("Free memory: "));
+  Serial.println(wifly.getFreeMemory(),DEC);
 
-    wifiSerial.begin(9600);
-    if (!wifly.begin(&wifiSerial,&Serial)) {
-        DEBUG_PRINTLN(F("Failed to start wifly"));
-        terminal();
-    }
+  wifiSerial.begin(9600);
+  if (!wifly.begin(&wifiSerial,&Serial)) {
+    DEBUG_PRINTLN(F("Failed to start wifly"));
+    terminal();
+  }
+}
+
+void set_alternate_pin_functions() {
+  wifly.println("set sys iofunc 0x70");
+  wifly.println("set sys printlvl 0");
+  wifly.save();
+  wifly.reboot();
 }
