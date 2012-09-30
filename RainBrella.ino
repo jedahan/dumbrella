@@ -1,8 +1,6 @@
-/*
- * Teared from the WiFlyHQ Example httpclient_progmem.ino
- *
- * This sketch is released to the public domain.
- *
+/* teared from the wiflyhq httpclient_progmem example
+ * this is all public domain, do what you want
+ * it would be nice to credit jonathan@jedahan.com
  */
 #define DEBUG
 #ifdef DEBUG
