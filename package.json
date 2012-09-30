@@ -1,0 +1,8 @@
+{ "name" : "fakerainapi"
+, "description" : "for the dumbrella, return fake is it gonna rain data"
+, "version" : "0.0.1"
+, "author" : "Jonathan Dahan <jonathan@jedahan.com>"
+, "dependencies" :
+  { "express": "2.5.x"
+  }
+}
